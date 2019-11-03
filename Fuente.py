@@ -1,25 +1,5 @@
 # coding=utf-8
-'''
-    Fuentes Valladolid: bot de Telegram para obtener información sobre las
-    fuentes de la ciudad de Valladolid.
-
-    Copyright (C) 2019  David Población
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-'''
-
-import sqlite3
+import sqlite3, sys
 from sqlite3 import Error
 
 class Fuente:
@@ -60,17 +40,20 @@ class Fuente:
     """
     def __init__(self, id, titulo, tipo, dir, dirUrl, imgs, imgsc, desc, mes, hora, lat, long):
         self.id = id
-        self.titulo = titulo
+        self.titulo = titulo.encode('ascii', 'ignore').decode('ascii')
         self.tipo = tipo
-        self.dir = dir
+        self.dir = dir.encode('ascii', 'ignore').decode('ascii')
         self.dirUrl = dirUrl
         self.imgs = imgs
         self.imgsc = imgsc
-        self.desc = desc
+        self.desc = desc.encode('ascii', 'ignore').decode('ascii')
         self.mes = mes
         self.hora = hora
         self.lat = lat
         self.long = long
+
+    def __str__(self):
+        return("["+str(self.id)+"] - "+self.titulo)
 
     def conectarDB(self, db_file):
         """ create a database connection to the SQLite database

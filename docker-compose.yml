@@ -1,0 +1,11 @@
+version: '2'
+services:
+  fuentes_valladolid_bot:
+    image: 'fuentes_valladolid_bot'
+    environment:
+     - TELEGRAM_TOKEN=879568927:
+     - USUARIO_NOLOGID=
+    volumes:
+     - '/home/david/fuentes_valladolid_bot_db:/app/db/'
+    container_name: fuentes_valladolid_bot
+    restart: unless-stopped

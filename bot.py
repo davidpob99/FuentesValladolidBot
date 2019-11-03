@@ -1,33 +1,11 @@
 # coding=utf-8
-'''
-    Fuentes Valladolid: bot de Telegram para obtener información sobre las
-    fuentes de la ciudad de Valladolid.
-
-    Copyright (C) 2019  David Población
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-'''
-import math, sqlite3, logging, os, time, gspread, uuid
+import math, sqlite3, logging, os, time, uuid
 from sqlite3 import Error
 from Fuente import Fuente
-from oauth2client.service_account import ServiceAccountCredentials
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, RegexHandler, ConversationHandler
 from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode, InlineKeyboardMarkup
 
-
 TOKEN = os.environ['TELEGRAM_TOKEN']
-GOOGLE_CRED = "credential.json"
 db = "db/fuentes.db"
 USUARIO_NOLOGID = os.environ['USUARIO_NOLOGID']
 STR_DIRURL = "https://maps.googleapis.com/maps/api/streetview?size=1050x300&pitch=1&key=AIzaSyBXnWJ28-55-mDm6J8-I7Fs04TFQ7LpwGQ&location="
@@ -39,9 +17,6 @@ TITULO, TIPO, DIR, DESC, HORA, LOCALIZACION = range(6)
 
 updater = Updater(TOKEN)
 all_user_data = dict()
-
-scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-credentials = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_CRED, scope)
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -158,25 +133,43 @@ def logId(username, id):
     None
 
     """
-    client = gspread.authorize(credentials)
-    sheet = client.open("FuentesValladolidBot").sheet1
-    sheet.append_row([username, time.strftime("%d/%m/%Y"), time.strftime("%H:%M:%S"), id])
+    conexion = concectarDB(db)
+    cur = conexion.cursor()
+    insertarLogFuente = '''
+    INSERT INTO log_fuentes (id_user, fecha, hora, id_fuente)
+    VALUES (?,?,?,?)
+    '''
+    cur.execute(insertarLogFuente, [username, time.strftime("%d/%m/%Y"), time.strftime("%H:%M:%S"), id])
+    conexion.commit()
+    cur.close()
 
 def logFuente(fuente, user_id):
     """
-    Guarda una nueva fuente en Google Sheets
+    Guarda una nueva fuente en la BD
     """
-    client = gspread.authorize(credentials)
-    sheet = client.open("FuentesValladolidBot").worksheet("NuevasFuentes")
-    sheet.append_row([str(fuente.id), fuente.titulo, fuente.tipo, fuente.dir, fuente.dirUrl, fuente.imgsc, fuente.desc, fuente.hora, fuente.lat, fuente.long, user_id, False])
+    conexion = concectarDB(db)
+    cur = conexion.cursor()
+    insertarNuevaFuente = '''
+    INSERT INTO nuevas_fuentes (id, titulo, tipo, dir, dirUrl, imgsc, desc, hora, lat, long, user_id, revisado)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    '''
+    cur.execute(insertarNuevaFuente, [str(fuente.id), fuente.titulo, fuente.tipo, fuente.dir, fuente.dirUrl, fuente.imgsc, fuente.desc, fuente.hora, float(fuente.lat), float(fuente.long), user_id, False])
+    conexion.commit()
+    cur.close()
 
 def logIncidencia(incidencia_id, incidencia_desc, user_id):
     """
-    Guarda una nueva incidencia en Google Sheets
+    Guarda una nueva incidencia en la BD
     """
-    client = gspread.authorize(credentials)
-    sheet = client.open("FuentesValladolidBot").worksheet("Incidencias")
-    sheet.append_row([user_id, time.strftime("%d/%m/%Y"), time.strftime("%H:%M:%S"), incidencia_id, incidencia_desc])
+    conexion = concectarDB(db)
+    cur = conexion.cursor()
+    insertarNuevaFuente = '''
+    INSERT INTO incidencias (id_user, fecha, hora, id_fuente, desc)
+    VALUES (?,?,?,?,?)
+    '''
+    cur.execute(insertarNuevaFuente, [user_id, time.strftime("%d/%m/%Y"), time.strftime("%H:%M:%S"), incidencia_id, incidencia_desc])
+    conexion.commit()
+    cur.close()
 
 
 def handler_start_help(bot, update):
@@ -286,7 +279,7 @@ def handler_id(bot, update):
     if fuente == None:
         bot.send_message(chat_id=update.message.chat_id, text="No existe ninguna fuente con ese id (" + id + ")")
         return
-    strFuente = "*" + fuente.titulo + "*"+ u"\n_" + fuente.dir + u"_\n" + fuente.desc + u"\n" + ACCESO[fuente.tipo] + u" | " + fuente.hora # + u"\nMeses: " + fuente.mes
+    strFuente = "*" + fuente.titulo + "*"+ u"\n_" + fuente.dir + u"_\n" + fuente.desc + u"\n" + ACCESO[fuente.tipo] + u" | " + fuente.hora  + u"\nMeses funcionamiento: " + fuente.mes
     # bot.send_message(chat_id=update.message.chat_id, text=strFuente, parse_mode=ParseMode.MARKDOWN)
     if fuente.imgsc == 2:
         bot.send_photo(chat_id=update.message.chat_id, photo=fuente.imgs, caption=strFuente, parse_mode=ParseMode.MARKDOWN)
@@ -338,19 +331,6 @@ def handler_licencia(bot,update):
     None
 
     """
-    """
-    strLicencia = 
-    
-Fuentes Valladolid: bot de Telegram para obtener información sobre las fuentes de la ciudad de Valladolid.
-
-Copyright (C) 2019 David Población
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/gpl-3.0.html>
-"""
     strLicencia = "Copyright (C) 2019 David Población. Todos los derechos reservados."
     bot.send_message(chat_id=update.message.chat_id, text=strLicencia)
 
@@ -526,8 +506,6 @@ conv_handler_location = ConversationHandler(
 
         conversation_timeout=120 # 2 min
     )
-
-
 
 updater.dispatcher.add_handler(conv_handler_incidencia)
 updater.dispatcher.add_handler(conv_handler_location)

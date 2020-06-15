@@ -511,5 +511,8 @@ updater.dispatcher.add_handler(conv_handler_incidencia)
 updater.dispatcher.add_handler(conv_handler_location)
 updater.dispatcher.add_handler(conv_handler)
 
-updater.start_polling()
+#updater.start_polling()
+updater.start_webhook(listen='172.18.0.3', port=5000, url_path='TOKEN')
+updater.bot.set_webhook(webhook_url='URL/TOKEN',
+                        certificate=open('cert.pem', 'rb'))
 updater.idle()

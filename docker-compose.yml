@@ -1,11 +1,19 @@
 version: '2'
 services:
   fuentes_valladolid_bot:
-    image: 'fuentes_valladolid_bot'
+    image: 'fuentes-valladolid-bot'
+    container_name: 'fuentes_valladolid_bot'
     environment:
-     - TELEGRAM_TOKEN=
-     - USUARIO_NOLOGID=
+     - TELEGRAM_TOKEN=TOKEN
+     - USUARIO_NOLOGID=USER
     volumes:
-     - '/home/david/fuentes_valladolid_bot_db:/app/db/'
-    container_name: fuentes_valladolid_bot
-    restart: unless-stopped
+     - '/root/docker/fuentes-valladolid-bot/data:/app/db/'
+    ports:
+      - 5000:5000
+    networks:
+      - proxy
+    restart: always
+networks:
+  proxy:
+    external:
+      name: nginx-proxy
